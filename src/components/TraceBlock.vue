@@ -21,7 +21,7 @@
           class="trace-spans q-px-sm q-mr-xs"
           :class="store.state.theme === 'dark' ? 'text-grey-5' : 'text-grey-8'"
         >
-          <span class="">Spans ddd : </span>
+          <span class="">Spans: </span>
           <span>{{ item.spans }}</span>
         </div>
         <div v-if="item.errors" class="trace-errors q-px-sm">

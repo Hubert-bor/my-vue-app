@@ -1,16 +1,12 @@
-<script setup>
-import TraceBlock from './components/TraceBlock.vue'
-</script>
-
 <template>
-
-  <div class="col column oveflow-hidden">
+  <div style="min-height: 100vh;">
     <div class="search-list" style="width: 100%">
-       <TraceBlock/>
+       <router-view />
     </div>
   </div>
-     
 </template>
+
+<script setup lang="ts"></script>
 
 
 <style lang="scss" scoped>
