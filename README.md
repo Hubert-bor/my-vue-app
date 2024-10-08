@@ -6,7 +6,7 @@ openobserve
 
 # 预览
 ![alt text](./src/assets/image.png)
-![alt text](./src/assets/detail.png)
+![alt text](./src/assets/detailPage.png)
 
 
 
