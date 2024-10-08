@@ -4,11 +4,15 @@ openobserve
 
 密码：Complexpass#123
 
+# 预览
+![alt text](./src/assets/image.png)
+![alt text](./src/assets/detail.png)
 
 
-使用 docker 启动
 
-1. 第一步安装 docker  镜像
+# 使用 docker 启动
+
+1. 安装 docker  镜像
 
 ```dockerfile
 docker run -v $PWD/data:/data -e ZO_DATA_DIR="/data" -p 5080:5080 \
@@ -41,23 +45,23 @@ docker run -v $PWD/data:/data -e ZO_DATA_DIR="/data" -p 5080:5080 \
 
 
 
-官方文档：
- https://openobserve.ai/docs/
+## :link: [官方文档](https://openobserve.ai/docs/)
 
-mock 数据
-
-
-[^使用 nodejs 设置 traces]: 
+# mock 数据
 
 
-1. git clone https://github.com/openobserve/sample-tracing-nodejs-javascript
-2. :link: [文档链接](https://openobserve.ai/docs/ingestion/traces/nodejs/) 根据文档提示操作即可
+## 使用 nodejs 设置 traces: 
 
-设置服务、应用程序
 
-tracing.js 文件配置
-url 和 Authorization 获取位置在界面中采集配置中获取
+### 克隆 sample-tracing-nodejs-javascript
+```js
+git clone https://github.com/openobserve/sample-tracing-nodejs-javascript
+```
+### 配置 tracing.js 文件
 
+ :link: [文档链接](https://openobserve.ai/docs/ingestion/traces/nodejs/) 根据文档提示操作即可
+
+ 
 ```js
 /*tracing.js*/
 // Require dependencies
@@ -89,6 +93,10 @@ const sdk = new opentelemetry.NodeSDK({
 sdk.start();
 ```
 
+### 设置服务、应用程序
+url 和 Authorization 获取位置在界面中采集配置中获取
+
+### 浏览器访问 http://localhost:8080 进行追踪
 
 运行命令
 
