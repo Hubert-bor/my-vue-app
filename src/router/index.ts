@@ -6,6 +6,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'home', component: () => import("@/views/index.vue") },
     { path: '/traceList', name: 'traceBlock', component: () => import("@/components/TraceBlock.vue") },
+    { path: '/traceDetails', name: 'traceDetails', component: () => import("@/components/TraceDetails.vue") },
   ]
 })
 
