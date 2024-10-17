@@ -3,9 +3,10 @@
 // eslint-disable-next-line no-undef
 module.exports = {
   prefix: "tw-",
+  important: true,
   content: [
     "./index.html",
-    "./src/**/*.{vue,js,ts}", // path to all template files
+    "./src/**/*.{vue,js,ts,tsx,jsx}", // path to all template files
   ],
   theme: {
     extend: {
