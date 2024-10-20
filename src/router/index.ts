@@ -8,6 +8,7 @@ const router = createRouter({
     { path: '/traceList', name: 'traceBlock', component: () => import("@/components/TraceBlock.vue") },
     { path: '/traceDetails', name: 'traceDetails', component: () => import("@/components/TraceDetails.vue") },
     { path: '/jaegerTraceList', name: 'jaegerTraceList', component: () => import("@/jaeger/index.vue") },
+    { path: '/tracePage', name: 'TracePage', component: () => import("@/jaeger/TracePage/index.vue") },
   ]
 })
 
