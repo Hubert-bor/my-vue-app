@@ -75,7 +75,7 @@ export default defineComponent({
     const suffix = (
       <>
         {allowClear && inputValue && inputValue.length && <div onClick={clearUiFind} >222</div>}
-        {inputProps.suffix}
+        {inputProps?.suffix}
       </>
     );
 

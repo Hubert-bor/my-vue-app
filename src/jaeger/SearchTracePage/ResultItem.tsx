@@ -44,8 +44,6 @@ export default defineComponent({
   props: ['trace'],
   components: { Col, Divider, Row, Tag, ResultItemTitle, ExclamationOutlined },
   setup(props: Props) {
-    console.log('%c ~ props ~ ', 'color:#2ecc71', props)
-
     const isErrorTag = ({ key, value }: KeyValuePair<boolean | string>) =>
       key === 'error' && (value === true || value === 'true');
     // const trackTraceConversions = () => trackConversions(EAltViewActions.Traces);

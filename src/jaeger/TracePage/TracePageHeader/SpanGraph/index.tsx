@@ -38,22 +38,37 @@ function getItems(trace: any): SpanItem[] {
 const memoizedGetItems = getItems;
 
 export default defineComponent({
-name: 'SpanGraph',
+  name: 'SpanGraph',
+  props: {
+    trace: { type: Object },
+    viewRange: { type: Object },
+    updateViewRangeTime: { type: Function },
+    updateNextViewRangeTime: { type: Function },
+  },
+  components: {
+    TickLabels,
+    CanvasSpanGraph,
+    ViewingLayer
+  },
   setup(props: any) {
     const height = 60
 
     const { trace, viewRange, updateNextViewRangeTime, updateViewRangeTime } = props;
     if (!trace) {
-      return <div />;
+      return () => (
+        <>
+          <div>没有SpanGraph</div>
+        </>
+      );
     }
 
     const items = memoizedGetItems(trace);
 
     return () => (
       <>
-        <div className="ub-pb2 ub-px2">
+        <div class="ub-pb2 ub-px2">
           <TickLabels numTicks={TIMELINE_TICK_INTERVAL} duration={trace.duration} />
-          <div className="ub-relative">
+          <div class="ub-relative">
             <CanvasSpanGraph valueWidth={trace.duration} items={items} />
             <ViewingLayer
               viewRange={viewRange}

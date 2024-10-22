@@ -69,6 +69,14 @@ function getNextViewLayout(start: number, position: number) {
 
 export default defineComponent({
   name: 'ViewingLayer',
+  components: { GraphTicks, Scrubber },
+  props: {
+    viewRange: { type: Object },
+    height: { type: Number },
+    numTicks: { type: Number },
+    updateNextViewRangeTime: { type: Function },
+    updateViewRangeTime: { type: Function }
+  },
   setup(props: any) {
     let state: ViewingLayerState;
 
@@ -90,6 +98,7 @@ export default defineComponent({
       if (!_root) {
         throw new Error('invalid state');
       }
+      console.log('%c ~ _root ~ ', 'color:#2ecc71', _root)
       const { left: clientXLeft, width } = _root.getBoundingClientRect();
       const [viewStart, viewEnd] = props.viewRange.time.current;
       let maxValue = 1;
@@ -121,6 +130,7 @@ export default defineComponent({
     };
 
     const _handleReframeMouseMove = ({ value }: DraggingUpdate) => {
+      console.log('%c ~ value ~ ', 'color:#2ecc71', value)
       props.updateNextViewRangeTime({ cursor: value });
     };
 
@@ -177,6 +187,7 @@ export default defineComponent({
       tag: dragTypes.REFRAME,
     });
 
+
     _draggerStart = new DraggableManager({
       getBounds: _getDraggingBounds,
       onDragEnd: _handleScrubberDragEnd,
@@ -197,7 +208,6 @@ export default defineComponent({
       tag: dragTypes.SHIFT_END,
     });
 
-    _root = undefined;
     state = {
       preventCursorLine: false,
     };
@@ -211,19 +221,6 @@ export default defineComponent({
     const _setRoot = (elm: SVGElement | undefined | null) => {
       _root = elm;
     };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Resets the zoom to fully zoomed out.
@@ -247,7 +244,7 @@ export default defineComponent({
       return [
         <rect
           key="fill"
-          className={`ViewingLayer--draggedShift ${cls}`}
+          class={`ViewingLayer--draggedShift ${cls}`}
           x={layout.x}
           y="0"
           width={layout.width}
@@ -255,7 +252,7 @@ export default defineComponent({
         />,
         <rect
           key="edge"
-          className={`ViewingLayer--draggedEdge ${cls}`}
+          class={`ViewingLayer--draggedEdge ${cls}`}
           x={layout.leadingX}
           y="0"
           width="1"
@@ -283,14 +280,13 @@ export default defineComponent({
     }
 
 
-
     return () => (
       <>
-        <div aria-hidden className="ViewingLayer" style={{ height }}>
+        <div aria-hidden class="ViewingLayer" style={{ height }} >
           {(viewStart !== 0 || viewEnd !== 1) && (
             <Button
               onClick={_resetTimeZoomClickHandler}
-              className="ViewingLayer--resetZoom"
+              class="ViewingLayer--resetZoom"
               htmlType="button"
             >
               Reset Selection
@@ -298,14 +294,14 @@ export default defineComponent({
           )}
           <svg
             height={height}
-            className="ViewingLayer--graph"
+            class="ViewingLayer--graph"
             ref={_setRoot}
             onMouseDown={_draggerReframe.handleMouseDown}
             onMouseLeave={_draggerReframe.handleMouseLeave}
             onMouseMove={_draggerReframe.handleMouseMove}
           >
             {leftInactive > 0 && (
-              <rect x={0} y={0} height="100%" width={`${leftInactive}%`} className="ViewingLayer--inactive" />
+              <rect x={0} y={0} height="100%" width={`${leftInactive}%`} class="ViewingLayer--inactive" />
             )}
             {rightInactive > 0 && (
               <rect
@@ -313,13 +309,13 @@ export default defineComponent({
                 y={0}
                 height="100%"
                 width={`${rightInactive}%`}
-                className="ViewingLayer--inactive"
+                class="ViewingLayer--inactive"
               />
             )}
             <GraphTicks numTicks={numTicks} />
             {cursorPosition && (
               <line
-                className="ViewingLayer--cursorGuide"
+                class="ViewingLayer--cursorGuide"
                 x1={cursorPosition}
                 y1="0"
                 x2={cursorPosition}
@@ -346,11 +342,10 @@ export default defineComponent({
             {reframe != null && _getMarkers(reframe.anchor, reframe.shift, false)}
           </svg>
           {/* fullOverlay updates the mouse cursor blocks mouse events */}
-          {haveNextTimeRange && <div className="ViewingLayer--fullOverlay" />}
+          {haveNextTimeRange && <div class="ViewingLayer--fullOverlay" />}
         </div>
       </>
     )
-
   }
 })
 

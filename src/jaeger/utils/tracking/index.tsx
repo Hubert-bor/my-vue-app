@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { TNil } from '../../types';
-import { IWebAnalyticsFunc } from '../../types/tracking';
 import GA from './ga';
 import NoopWebAnalytics from './noopWebAnalytics';
-import getConfig from '../config/get-config';
-import { getVersionInfo } from '../constants';
 
+
+type TNil = null | undefined;
 const TrackingImplementation = () => {
-  const config = getConfig();
+  const config = {
+    tracking: {
+      gaID: 'UA-109587346-2',
+    },
+  }
+
   let versionShort;
   let versionLong;
 
-  const versionInfo = getVersionInfo();
+  const versionInfo = ""
 
   if (versionInfo) {
     try {
@@ -47,11 +50,11 @@ const TrackingImplementation = () => {
 
   let webAnalyticsFunc = NoopWebAnalytics;
 
-  if (config.tracking && config.tracking.customWebAnalytics) {
-    webAnalyticsFunc = config.tracking.customWebAnalytics as IWebAnalyticsFunc;
-  } else if (config.tracking && config.tracking.gaID) {
-    webAnalyticsFunc = GA;
-  }
+  // if (config.tracking && config.tracking.customWebAnalytics) {
+  //   webAnalyticsFunc = config.tracking.customWebAnalytics as IWebAnalyticsFunc;
+  // } else if (config.tracking && config.tracking.gaID) {
+  //   webAnalyticsFunc = GA;
+  // }
 
   const webAnalytics = webAnalyticsFunc(config, versionShort, versionLong);
   webAnalytics.init();

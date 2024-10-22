@@ -2,7 +2,6 @@ import _isEqual from 'lodash/isEqual';
 
 // import { History as RouterHistory, Location } from 'history';
 
-import { actions } from './duck';
 import ListView from './ListView';
 import SpanBarRow from './SpanBarRow';
 import DetailState from './SpanDetail/DetailState';
@@ -99,7 +98,7 @@ function generateRowStates(
     if (hidden) {
       continue;
     }
-    if (childrenHiddenIDs.has(spanID)) {
+    if (childrenHiddenIDs?.has(spanID)) {
       collapseDepth = depth + 1;
     }
     rowStates.push({
@@ -107,7 +106,7 @@ function generateRowStates(
       isDetail: false,
       spanIndex: i,
     });
-    if (detailStates.has(spanID)) {
+    if (detailStates?.has(spanID)) {
       rowStates.push({
         span,
         isDetail: true,
@@ -178,9 +177,35 @@ const memoizedGetCssClasses = getCssClasses;
 
 export default defineComponent({
   name: 'VirtualizedTraceViewImpl',
+  props: {
+    childrenToggle: Function,
+    clearShouldScrollToFirstUiFindMatch: Function,
+    detailLogItemToggle: Function,
+    detailLogsToggle: Function,
+    detailReferencesToggle: Function,
+    detailProcessToggle: Function,
+    detailTagsToggle: Function,
+    detailToggle: Function,
+    setSpanNameColumnWidth: Function,
+    spanNameColumnWidth: Number,
+    setTrace: Function,
+    focusUiFindMatches: Function,
+    currentViewRangeTime: Array,
+    findMatchesIDs: Object,
+    scrollToFirstVisibleSpan: Function,
+    registerAccessors: Function,
+    trace: Object,
+    criticalPath: Array,
+    childrenHiddenIDs: Array
+  },
+  components: {
+    ListView,
+    SpanBarRow,
+    SpanDetailRow
+  },
   setup(props: any) {
 
-    let listView: ListView | null | undefined;
+    let listView: null | undefined;
 
     const shouldComponentUpdate = (nextProps: VirtualizedTraceViewProps) => {
       // If any prop updates, VirtualizedTraceViewImpl should update.
@@ -259,7 +284,7 @@ export default defineComponent({
     };
 
     const getAccessors = () => {
-      const lv = listView;
+      const lv: any = listView;
       if (!lv) {
         throw new Error('ListView unavailable');
       }
@@ -295,7 +320,7 @@ export default defineComponent({
       throw new Error(`unable to find row for span index: ${index}`);
     };
 
-    const setListView = (listView: ListView | undefined | null) => {
+    const setListView = (listView: any | undefined | null) => {
       const isChanged = listView !== listView;
       listView = listView;
       if (listView && isChanged) {
@@ -360,13 +385,33 @@ export default defineComponent({
         trace,
         criticalPath,
       } = props;
-      // to avert flow error
+
+      console.log('%c ~ detailToggle ~ ', 'color:#2ecc71', detailToggle)
+
+
       if (!trace) {
-        return null;
+        return (
+          <div>VirtualizedTraceViewImpl no trace</div>
+        );
       }
+
+
+      // else {
+      //   console.log('4444444444', 4444444444)
+
+      //   return (
+
+      //     <div>
+      //       <div>VirtualizedTraceViewImpl renderSpanBarRow</div>
+      //       <SpanBarRow
+      //         getViewedBounds={getViewedBounds()}
+      //       />
+      //     </div>
+      //   )
+      // }
       const color = colorGenerator.getColorByKey(serviceName);
-      const isCollapsed = childrenHiddenIDs.has(spanID);
-      const isDetailExpanded = detailStates.has(spanID);
+      const isCollapsed = childrenHiddenIDs?.has(spanID);
+      const isDetailExpanded = detailStates?.has(spanID);
       const isMatchingFilter = findMatchesIDs ? findMatchesIDs.has(spanID) : false;
       const showErrorIcon = isErrorSpan(span) || (isCollapsed && spanContainsErredSpan(trace.spans, spanIndex));
       const criticalPathSections = isCollapsed
@@ -399,7 +444,7 @@ export default defineComponent({
       }
 
       return (
-        <div className="VirtualizedTraceView--row" key={key} style={style} {...attrs}>
+        <div class="VirtualizedTraceView--row" key={key} style={style} {...attrs}>
           <SpanBarRow
             className={getClippingCssClasses()}
             color={color}
@@ -414,13 +459,13 @@ export default defineComponent({
             rpc={rpc}
             noInstrumentedServer={noInstrumentedServer}
             showErrorIcon={showErrorIcon}
-            getViewedBounds={getViewedBounds()}
             traceStartTime={trace.startTime}
             span={span}
             focusSpan={focusSpan}
+            getViewedBounds={getViewedBounds()}
           />
         </div>
-      );
+      )
     }
 
     const renderSpanDetailRow = (span: any, key: string, style: any, attrs: object) => {
@@ -438,13 +483,13 @@ export default defineComponent({
         spanNameColumnWidth,
         trace,
       } = props;
-      const detailState = detailStates.get(spanID);
+      const detailState = detailStates?.get(spanID);
       if (!trace || !detailState) {
         return null;
       }
       const color = colorGenerator.getColorByKey(serviceName);
       return (
-        <div className="VirtualizedTraceView--row" key={key} style={{ ...style, zIndex: 1 }} {...attrs}>
+        <div class="VirtualizedTraceView--row" key={key} style={{ ...style, zIndex: 1 }} {...attrs}>
           <SpanDetailRow
             color={color}
             columnDivision={spanNameColumnWidth}
@@ -462,14 +507,12 @@ export default defineComponent({
             focusSpan={focusSpan}
           />
         </div>
-      );
+      )
     }
-
-
 
     return () => (
       <>
-        <div className="VirtualizedTraceView--spans">
+        <div class="VirtualizedTraceView--spans">
           <ListView
             ref={setListView}
             dataLength={getRowStates().length}
@@ -502,7 +545,7 @@ function mapStateToProps(state: any): any & TExtractUiFindFromStateReturn {
 }
 
 /* istanbul ignore next */
-function mapDispatchToProps(dispatch: any): TDispatchProps {
+function mapDispatchToProps(dispatch: any): any {
   // return bindActionCreators(actions, dispatch) as any as TDispatchProps;
 }
 

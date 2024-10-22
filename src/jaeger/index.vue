@@ -3,7 +3,6 @@
     <ResultItem 
       :durationPercent="getPercentageOfDuration(trace.duration, 3600)"
       :isInDiffCohort="cohortIds.has(trace.traceID)"
-      linkTo=''
       :trace="trace"
     />
   </div>
@@ -50,5 +49,3 @@ const stateTraceXformer =(stateTrace) => {
 }
 </script>
 
-
-<style lang="less" scoped></style>

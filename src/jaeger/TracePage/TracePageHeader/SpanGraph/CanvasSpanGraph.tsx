@@ -15,14 +15,16 @@ const getColor = (hex: string) => colorGenerator.getRgbColorByKey(hex);
 
 export default defineComponent({
   name: 'CanvasSpanGraph',
-  setup(props:any) {
-  let   _canvasElm: HTMLCanvasElement | null | undefined;
-
-      _canvasElm = undefined;
+  props: {
+    items: { required: true, type: Array as () => CanvasSpanGraphProps['items'] },
+    valueWidth: { required: true, type: Number }
+  },
+  setup(props: any) {
+    let _canvasElm: HTMLCanvasElement | null | undefined;
 
     onMounted(() => {
       _draw();
-   })
+    })
 
     // componentDidUpdate() {
     //   _draw();
@@ -32,7 +34,7 @@ export default defineComponent({
       _canvasElm = elm;
     };
 
-   const  _draw = ()=> {
+    const _draw = () => {
       if (_canvasElm) {
         const { valueWidth: totalValueWidth, items } = props;
         renderIntoCanvas(_canvasElm, items, totalValueWidth, getColor);
@@ -44,7 +46,3 @@ export default defineComponent({
     )
   }
 })
-
-// export default class CanvasSpanGraph extends React.PureComponent<CanvasSpanGraphProps> {
- 
-// }

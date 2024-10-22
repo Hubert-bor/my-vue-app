@@ -4,7 +4,7 @@ import _mapValues from 'lodash/mapValues';
 import _memoize from 'lodash/memoize';
 
 // import ArchiveNotifier from './ArchiveNotifier';
-import { actions as archiveActions } from './ArchiveNotifier/duck';
+// import { actions as archiveActions } from './ArchiveNotifier/duck';
 import { trackFilter, trackFocusMatches, trackNextMatch, trackPrevMatch, trackRange } from './index.track';
 // import {
 //   CombokeysHandler,
@@ -20,7 +20,6 @@ import ScrollManager from './ScrollManager';
 import { trackSlimHeaderToggle } from './TracePageHeader/TracePageHeader.track';
 import TracePageHeader from './TracePageHeader';
 import TraceTimelineViewer from './TraceTimelineViewer';
-import { actions as timelineActions } from './TraceTimelineViewer/duck';
 import { TUpdateViewRangeTimeFunction, IViewRange, ViewRangeTimeUpdate, ETraceViewType } from './types';
 import { getLocation, getUrl } from './url';
 // import ErrorMessage from '../common/ErrorMessage';
@@ -30,13 +29,13 @@ import LoadingIndicator from '../common/LoadingIndicator';
 import { fetchedState } from '../constants';
 import filterSpans from '../utils/filter-spans';
 import updateUiFind from '../utils/update-ui-find';
-import TraceStatistics from './TraceStatistics/index';
+// import TraceStatistics from './TraceStatistics/index';
 // import TraceSpanView from './TraceSpanView/index';
 import TraceFlamegraph from './TraceFlamegraph/index';
 
 import './index.css';
 import memoizedTraceCriticalPath from './CriticalPath/index';
-import withRouteProps from '../utils/withRouteProps';
+// import withRouteProps from '../utils/withRouteProps';
 import { defineComponent, onMounted, onUnmounted, onUpdated, ref } from 'vue';
 
 type TDispatchProps = {
@@ -106,26 +105,40 @@ export function makeShortcutCallbacks(adjRange: (start: number, end: number) => 
 
 export default defineComponent({
   name: 'TracePageImpl',
+  props: {
+    trace: Object,
+    viewRange: Object,
+    criticalPathEnabled: { type: Boolean, default: true }
+  },
+  components: {
+    TracePageHeader,
+    TraceTimelineViewer,
+    TraceFlamegraph,
+    LoadingIndicator
+  },
   setup(props: any) {
 
     let _headerElm: HTMLElement | null | undefined;
     let _filterSpans: typeof filterSpans;
     const _searchBar = ref()
-    let _scrollManager: ScrollManager;
+    let _scrollManager: any;
     let traceDagEV: null | undefined;
 
     const { embedded, trace } = props;
-    const state = {
-      headerHeight: null,
-      slimView: Boolean(embedded && embedded.timeline.collapseTitle),
-      viewType: ETraceViewType.TraceTimelineViewer,
-      viewRange: {
-        time: {
-          current: [0, 1],
+    const state = ref<any>(
+      {
+        headerHeight: null,
+        slimView: Boolean(embedded && embedded.timeline.collapseTitle),
+        viewType: ETraceViewType.TraceTimelineViewer,
+        viewRange: {
+          time: {
+            current: [0, 1],
+            cursor: 0.9034578340730864
+          },
         },
-      },
-    };
-    _headerElm = null;
+      }
+    )
+
     _filterSpans = _memoize(
       filterSpans,
       // Do not use the memo if the filter text or trace has changed.
@@ -140,6 +153,15 @@ export default defineComponent({
     // resetShortcuts();
 
     onMounted(() => {
+      setHeaderHeight(_headerElm);
+
+      const { trace } = props;
+      _scrollManager.setTrace(trace && trace.data);
+      if (!trace) {
+        ensureTraceFetched();
+        return;
+      }
+
       ensureTraceFetched();
       updateViewRangeTime(0, 1);
       /* istanbul ignore if */
@@ -161,18 +183,16 @@ export default defineComponent({
 
     onUpdated(() => {
       const { id, trace } = props;
-
       _scrollManager.setTrace(trace && trace.data);
 
-      setHeaderHeight(_headerElm);
       if (!trace) {
         ensureTraceFetched();
-        return;
+        // return () => (
+        //   <>
+        //     <div>no trace</div>
+        //   </>
+        // )
       }
-      // if (prevID !== id) {
-      //   updateViewRangeTime(0, 1);
-      //   clearSearch();
-      // }
     })
 
     onUnmounted(() => {
@@ -186,7 +206,7 @@ export default defineComponent({
     })
 
     const _adjustViewRange = (startChange: number, endChange: number, trackSrc: string) => {
-      const [viewStart, viewEnd] = state.viewRange.time.current;
+      const [viewStart, viewEnd] = state.value.viewRange.time.current;
       let start = _clamp(viewStart + startChange, 0, 0.99);
       let end = _clamp(viewEnd + endChange, 0.01, 1);
       if (end - start < VIEW_MIN_RANGE) {
@@ -206,11 +226,11 @@ export default defineComponent({
     const setHeaderHeight = (elm: HTMLElement | null | undefined) => {
       _headerElm = elm;
       if (elm) {
-        if (state.headerHeight !== elm.clientHeight) {
-          // setState({ headerHeight: elm.clientHeight });
+        if (state.value.headerHeight !== elm.clientHeight) {
+          state.value.headerHeight = elm.clientHeight;
         }
-      } else if (state.headerHeight) {
-        // setState({ headerHeight: null });
+      } else if (state.value.headerHeight) {
+        state.value.headerHeight = null;
       }
     };
 
@@ -230,24 +250,30 @@ export default defineComponent({
 
     const updateViewRangeTime: TUpdateViewRangeTimeFunction = (start: number, end: number, trackSrc?: string) => {
       if (trackSrc) {
-        trackRange(trackSrc, [start, end], state.viewRange.time.current as any);
+        trackRange(trackSrc, [start, end], state.value.viewRange.time.current as any);
       }
       const current: [number, number] = [start, end];
       const time = { current };
+      state.value.viewRange = { ...state.value.viewRange, time };
       // setState((state: TState) => ({ viewRange: { ...state.viewRange, time } }));
+      state.value.viewRange = { ...state.value.viewRange, time }
     };
 
     const updateNextViewRangeTime = (update: ViewRangeTimeUpdate) => {
+      state.value.viewRange = { ...state.value.viewRange.time, ...update, ...state.value.viewRange }
       // setState((state: TState) => {
       //   const time = { ...state.viewRange.time, ...update };
       //   return { viewRange: { ...state.viewRange, time } };
       // });
+      state.value.viewRange = { ...state.value.viewRange, time: { ...state.value.viewRange.time, ...update } };
     };
 
     const toggleSlimView = () => {
-      const { slimView } = state;
+      const { slimView } = state.value;
       trackSlimHeaderToggle(!slimView);
+      state.value.slimView = !slimView;
       // setState({ slimView: !slimView });
+      state.value = { ...state.value, slimView: !slimView };
     };
 
     // const setTraceView = (viewType: ETraceViewType) => {
@@ -270,12 +296,12 @@ export default defineComponent({
     const ensureTraceFetched = () => {
       const { fetchTrace, location, trace, id } = props;
       if (!trace) {
-        fetchTrace(id);
+        // fetchTrace(id);
         return;
       }
       const { history } = props;
       if (id && id !== id.toLowerCase()) {
-        history.replace(getLocation(id.toLowerCase(), location.state));
+        history.replace(getLocation(id.toLowerCase(), location?.state));
       }
     }
 
@@ -306,23 +332,32 @@ export default defineComponent({
       uiFind,
       disableJsonView,
       traceGraphConfig,
-      location: { state: locationState },
+      // location: { state: locationState },
     } = props;
-    const { slimView, viewType, headerHeight, viewRange } = state;
-    if (!trace || trace.state === fetchedState.LOADING) {
-      return <LoadingIndicator className="u-mt-vast" centered />;
-    }
+    // const { slimView, viewType, headerHeight, viewRange } = state.value;
+    // if (!trace || trace?.state === fetchedState.LOADING) {
+    //   return () => (
+    //     <>
+    //       {/* <LoadingIndicator className="u-mt-vast" centered />; */}
+    //       <div>loading</div>
+    //     </>
+    //   )
+    // }
     const { data } = trace;
-    if (trace.state === fetchedState.ERROR || !data) {
+    if (trace?.state === fetchedState.ERROR || !data) {
       // return <ErrorMessage className="ub-m3" error={trace.error || 'Unknown error'} />;
-      return <div>Error</div>
+      return () => (
+        <>
+          <div>Error</div>
+        </>
+      )
     }
 
     let findCount = 0;
     let graphFindMatches: Set<string> | null | undefined;
     let spanFindMatches: Set<string> | null | undefined;
     if (uiFind) {
-      if (viewType === ETraceViewType.TraceGraph) {
+      if (state.value.viewType === ETraceViewType.TraceGraph) {
         // graphFindMatches = getUiFindVertexKeys(uiFind, _get(traceDagEV, 'vertices', []));
         findCount = graphFindMatches ? graphFindMatches.size : 0;
       } else {
@@ -335,14 +370,14 @@ export default defineComponent({
     const hasArchiveStorage = Boolean(storageCapabilities?.archiveStorage);
     const headerProps = {
       focusUiFindMatches: focusUiFindMatches,
-      slimView,
+      slimView: state.value.slimView,
       textFilter: uiFind,
-      viewType,
-      viewRange,
+      viewType: state.value.viewType,
+      viewRange: state.value.viewRange,
       canCollapse: !embedded || !embedded.timeline.hideSummary || !embedded.timeline.hideMinimap,
       clearSearch: clearSearch,
       hideMap: Boolean(
-        viewType !== ETraceViewType.TraceTimelineViewer || (embedded && embedded.timeline.hideMinimap)
+        state.value.viewType !== ETraceViewType.TraceTimelineViewer || (embedded && embedded.timeline.hideMinimap)
       ),
       hideSummary: Boolean(embedded && embedded.timeline.hideSummary),
       linkToStandalone: getUrl(id),
@@ -358,67 +393,36 @@ export default defineComponent({
       showShortcutsHelp: !isEmbedded,
       showStandaloneLink: isEmbedded,
       showViewOptions: !isEmbedded,
-      toSearch: (locationState && locationState.fromSearch) || null,
+      toSearch: null,
       trace: data,
       updateNextViewRangeTime: updateNextViewRangeTime,
       updateViewRangeTime: updateViewRangeTime,
     };
 
-    let view;
     const criticalPath = criticalPathEnabled ? memoizedTraceCriticalPath(data) : [];
-    if (ETraceViewType.TraceTimelineViewer === viewType && headerHeight) {
-      view = (
-        <TraceTimelineViewer
-          registerAccessors={_scrollManager.setAccessors}
-          scrollToFirstVisibleSpan={_scrollManager.scrollToFirstVisibleSpan}
-          findMatchesIDs={spanFindMatches}
-          trace={data}
-          criticalPath={criticalPath}
-          updateNextViewRangeTime={updateNextViewRangeTime}
-          updateViewRangeTime={updateViewRangeTime}
-          viewRange={viewRange}
-        />
-      );
-    } else if (ETraceViewType.TraceGraph === viewType && headerHeight) {
-      // view = (
-      //   <TraceGraph
-      //     headerHeight={headerHeight}
-      //     ev={traceDagEV}
-      //     uiFind={uiFind}
-      //     uiFindVertexKeys={graphFindMatches}
-      //     traceGraphConfig={traceGraphConfig}
-      //   />
-      // );
-    } else if (ETraceViewType.TraceStatistics === viewType && headerHeight) {
-      // view = <TraceStatistics trace={data} uiFindVertexKeys={spanFindMatches} uiFind={uiFind} />;
-    } else if (ETraceViewType.TraceSpansView === viewType && headerHeight) {
-      // view = <TraceSpanView trace={data} uiFindVertexKeys={spanFindMatches} uiFind={uiFind} />;
-    } else if (ETraceViewType.TraceFlamegraph === viewType && headerHeight) {
-      view = <TraceFlamegraph trace={trace} />;
-    }
-
-
-
     return () => (
       <>
         <div>
-          {/* {archiveEnabled && (
-            <ArchiveNotifier acknowledge={acknowledgeArchive} archivedState={archiveTraceState} />
-          )} */}
-          <div className="Tracepage--headerSection" ref={setHeaderHeight}>
+          <div class="Tracepage--headerSection" ref={setHeaderHeight}>
             <TracePageHeader {...headerProps} />
           </div>
-          {headerHeight ? <section style={{ paddingTop: headerHeight }}>{view}</section> : null}
+          {state.value.headerHeight ? <div style={{ paddingTop: state.value.headerHeight + 'px' }}>
+            <TraceTimelineViewer
+              registerAccessors={_scrollManager.setAccessors}
+              scrollToFirstVisibleSpan={_scrollManager.scrollToFirstVisibleSpan}
+              findMatchesIDs={spanFindMatches}
+              trace={data}
+              criticalPath={criticalPath}
+              updateNextViewRangeTime={updateNextViewRangeTime}
+              updateViewRangeTime={updateViewRangeTime}
+              viewRange={state.value.viewRange}
+            />
+          </div> : null}
         </div>
       </>
     );
   }
 })
-
-// export for tests
-// export class TracePageImpl extends React.PureComponent<TProps, TState> {
-
-// }
 
 // export for tests
 export function mapStateToProps(state: any, ownProps: TOwnProps): any {

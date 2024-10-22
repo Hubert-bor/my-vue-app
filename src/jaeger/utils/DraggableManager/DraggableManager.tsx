@@ -1,23 +1,10 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import _get from 'lodash/get';
-import type React from 'react';
 
 import EUpdateTypes from './EUpdateTypes';
 import { DraggableBounds, DraggingUpdate } from './types';
-import { TNil } from '../../types';
+
+type TNil = null | undefined;
 
 const LEFT_MOUSE_BUTTON = 0;
 
@@ -60,10 +47,10 @@ export default class DraggableManager {
   tag: string | TNil;
 
   // handlers for integration with DOM elements
-  handleMouseEnter: (event: React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => void;
-  handleMouseMove: (event: React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => void;
-  handleMouseLeave: (event: React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => void;
-  handleMouseDown: (event: React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => void;
+  handleMouseEnter: (event: any) => void;
+  handleMouseMove: (event: any) => void;
+  handleMouseLeave: (event: any) => void;
+  handleMouseDown: (event: any) => void;
 
   constructor({ getBounds, tag, resetBoundsOnResize = true, ...rest }: DraggableManagerOptions) {
     this.handleMouseDown = this._handleDragEvent;
@@ -142,7 +129,7 @@ export default class DraggableManager {
     this._bounds = undefined;
   };
 
-  _handleMinorMouseEvent = (event: React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => {
+  _handleMinorMouseEvent = (event: any) => {
     const { button, clientX, type: eventType } = event;
     if (this._isDragging || button !== LEFT_MOUSE_BUTTON) {
       return;
@@ -175,7 +162,7 @@ export default class DraggableManager {
     });
   };
 
-  _handleDragEvent = (event: MouseEvent | React.MouseEvent<HTMLDivElement | SVGSVGElement, MouseEvent>) => {
+  _handleDragEvent = (event: any) => {
     const { button, clientX, type: eventType } = event;
     let type: EUpdateTypes | null = null;
     let handler: ((update: DraggingUpdate) => void) | TNil;

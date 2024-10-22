@@ -1,30 +1,13 @@
-// Copyright (c) 2019 The Jaeger Authors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import DRange from 'drange';
 
-import { TEdge } from '@jaegertracing/plexus/lib/types';
 import convPlexus from '../../../model/trace-dag/convPlexus';
 import TraceDag from '../../../model/trace-dag/TraceDag';
 import TDagNode from '../../../model/trace-dag/types/TDagNode';
-import { TDenseSpanMembers } from '../../../model/trace-dag/types';
-import { Trace, Span, KeyValuePair } from '../../../types/trace';
-import { TSumSpan, TEv } from './types';
 
-let parentChildOfMap: Record<string, Span[]>;
+let parentChildOfMap: Record<string, any[]>;
 
-export function isError(tags: Array<KeyValuePair>) {
+export function isError(tags: Array<any>) {
   if (tags) {
     const errorTag = tags.find(t => t.key === 'error');
     if (errorTag) {
@@ -36,9 +19,9 @@ export function isError(tags: Array<KeyValuePair>) {
 }
 
 function mapFollowsFrom(
-  edges: TEdge[],
-  nodes: TDagNode<TSumSpan & TDenseSpanMembers>[]
-): TEdge<{ followsFrom: boolean }>[] {
+  edges: any[],
+  nodes: TDagNode<any & any>[]
+): any {
   return edges.map(e => {
     let hasChildOf = true;
     if (typeof e.to === 'number') {
@@ -51,7 +34,7 @@ function mapFollowsFrom(
   });
 }
 
-function getChildOfSpans(parentID: string, trace: Trace): Span[] {
+function getChildOfSpans(parentID: string, trace: any): any {
   if (!parentChildOfMap) {
     parentChildOfMap = {};
     trace.spans.forEach(s => {
@@ -68,7 +51,7 @@ function getChildOfSpans(parentID: string, trace: Trace): Span[] {
   return parentChildOfMap[parentID] || [];
 }
 
-function getChildOfDrange(parentID: string, trace: Trace) {
+function getChildOfDrange(parentID: string, trace: any) {
   const childrenDrange = new DRange();
   getChildOfSpans(parentID, trace).forEach(s => {
     // -1 otherwise it will take for each child a micro (incluse,exclusive)
@@ -77,9 +60,9 @@ function getChildOfDrange(parentID: string, trace: Trace) {
   return childrenDrange;
 }
 
-export function calculateTraceDag(trace: Trace): TraceDag<TSumSpan & TDenseSpanMembers> {
+export function calculateTraceDag(trace: any): TraceDag<any> {
   const baseDag = TraceDag.newFromTrace(trace);
-  const dag = new TraceDag<TSumSpan & TDenseSpanMembers>();
+  const dag = new TraceDag<any>();
 
   baseDag.nodesMap.forEach(node => {
     const ntime = node.members.reduce((p, m) => p + m.span.duration, 0);
@@ -105,7 +88,7 @@ export function calculateTraceDag(trace: Trace): TraceDag<TSumSpan & TDenseSpanM
   return dag;
 }
 
-export default function calculateTraceDagEV(trace: Trace): TEv {
+export default function calculateTraceDagEV(trace: any): any {
   const traceDag = calculateTraceDag(trace);
   const nodes = [...traceDag.nodesMap.values()];
   const ev = convPlexus(traceDag.nodesMap);

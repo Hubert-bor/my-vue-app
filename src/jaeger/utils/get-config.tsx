@@ -10,13 +10,13 @@ function getUiConfig() {
     console.warn('Embedded config not available');
     return {};
   }
-  return getter();
+  // return getter();
 }
 
 function getCapabilities() {
   const getter = window.getJaegerStorageCapabilities;
   const capabilities = typeof getter === 'function' ? getter() : null;
-  return capabilities ?? defaultConfig.storageCapabilities;
+  return capabilities ?? 'dd';
 }
 
 /**

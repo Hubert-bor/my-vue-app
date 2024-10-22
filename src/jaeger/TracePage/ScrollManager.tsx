@@ -1,5 +1,6 @@
-import { defineComponent } from "vue";
 
+
+type TNil = undefined | null;
 /**
  * `Accessors` is necessary because `ScrollManager` needs to be created by
  * `TracePage` so it can be passed into the keyboard shortcut manager. But,
@@ -12,8 +13,8 @@ import { defineComponent } from "vue";
  */
 export type Accessors = {
   getViewRange: () => [number, number];
-  getSearchedSpanIDs: () => Set<string> | undefined | null;
-  getCollapsedChildren: () => Set<string> | undefined | null;
+  getSearchedSpanIDs: () => Set<string> | TNil;
+  getCollapsedChildren: () => Set<string> | TNil;
   getViewHeight: () => number;
   getBottomRowIndexVisible: () => number;
   getTopRowIndexVisible: () => number;
@@ -39,9 +40,9 @@ interface IScroller {
  * @param {Map<string, Span> | TNil} spansMap Mapping from spanID to Span.
  * @returns {{ isHidden: boolean, parentIds: Set<string> }}
  */
-function isSpanHidden(span: any, childrenAreHidden: Set<string>, spansMap: Map<string, any>) {
+function isSpanHidden(span: any, childrenAreHidden: Set<string>, spansMap: Map<string, any | TNil>) {
   const parentIDs = new Set<string>();
-  let { references }: { references: any } = span;
+  let { references }: { references: any[] | TNil } = span;
   let parentID: undefined | string;
   const checkRef = (ref: any) => {
     if (ref.refType === 'CHILD_OF' || ref.refType === 'FOLLOWS_FROM') {
@@ -70,195 +71,190 @@ function isSpanHidden(span: any, childrenAreHidden: Set<string>, spansMap: Map<s
  * ScrollManager is intended for scrolling the TracePage. Has two modes, paging
  * and scrolling to the previous or next visible span.
  */
+export default class ScrollManager {
+  _trace: any | TNil;
+  _scroller: IScroller | TNil;
+  _accessors: Accessors | TNil;
 
-export default defineComponent({
-  name: 'ScrollManager',
+  constructor(trace: any | TNil, scroller: IScroller) {
+    this._trace = trace;
+    this._scroller = scroller;
+    this._accessors = undefined;
+  }
 
-  setup(props) {
-
-    let _trace: any;
-    let _scroller: IScroller;
-    let _accessors: Accessors;
-
-    // _trace = trace;
-    // _scroller = scroller;
-    // _accessors = undefined;
-
-    const _scrollPast = (rowIndex: number, direction: 1 | -1) => {
-      const xrs = _accessors;
-      /* istanbul ignore next */
-      if (!xrs) {
-        throw new Error('Accessors not set');
-      }
-      const isUp = direction < 0;
-      const position = xrs.getRowPosition(rowIndex);
-      if (!position) {
-        // eslint-disable-next-line no-console
-        console.warn('Invalid row index');
-        return;
-      }
-      let { y } = position;
-      const vh = xrs.getViewHeight();
-      if (!isUp) {
-        y += position.height;
-        // scrollTop is based on the top of the window
-        y -= vh;
-      }
-      y += direction * 0.5 * vh;
-      _scroller?.scrollTo(y);
+  _scrollPast(rowIndex: number, direction: 1 | -1) {
+    const xrs = this._accessors;
+    /* istanbul ignore next */
+    if (!xrs) {
+      throw new Error('Accessors not set');
     }
+    const isUp = direction < 0;
+    const position = xrs.getRowPosition(rowIndex);
+    if (!position) {
+      // eslint-disable-next-line no-console
+      console.warn('Invalid row index');
+      return;
+    }
+    let { y } = position;
+    const vh = xrs.getViewHeight();
+    if (!isUp) {
+      y += position.height;
+      // scrollTop is based on the top of the window
+      y -= vh;
+    }
+    y += direction * 0.5 * vh;
+    this._scroller?.scrollTo(y);
+  }
 
-    const _scrollToVisibleSpan = (direction: 1 | -1, startRow?: number) => {
-      const xrs = _accessors;
-      /* istanbul ignore next */
-      if (!xrs) {
-        throw new Error('Accessors not set');
+  _scrollToVisibleSpan(direction: 1 | -1, startRow?: number) {
+    const xrs = this._accessors;
+    /* istanbul ignore next */
+    if (!xrs) {
+      throw new Error('Accessors not set');
+    }
+    if (!this._trace) {
+      return;
+    }
+    const { duration, spans, startTime: traceStartTime } = this._trace;
+    const isUp = direction < 0;
+    let boundaryRow: number;
+    if (startRow != null) {
+      boundaryRow = startRow;
+    } else if (isUp) {
+      boundaryRow = xrs.getTopRowIndexVisible();
+    } else {
+      boundaryRow = xrs.getBottomRowIndexVisible();
+    }
+    const spanIndex = xrs.mapRowIndexToSpanIndex(boundaryRow);
+    if ((spanIndex === 0 && isUp) || (spanIndex === spans.length - 1 && !isUp)) {
+      return;
+    }
+    // fullViewSpanIndex is one row inside the view window unless already at the top or bottom
+    let fullViewSpanIndex = spanIndex;
+    if (spanIndex !== 0 && spanIndex !== spans.length - 1) {
+      fullViewSpanIndex -= direction;
+    }
+    const [viewStart, viewEnd] = xrs.getViewRange();
+    const checkVisibility = viewStart !== 0 || viewEnd !== 1;
+    // use NaN as fallback to make flow happy
+    const startTime = checkVisibility ? traceStartTime + duration * viewStart : NaN;
+    const endTime = checkVisibility ? traceStartTime + duration * viewEnd : NaN;
+    const findMatches = xrs.getSearchedSpanIDs();
+    const _collapsed = xrs.getCollapsedChildren();
+    const childrenAreHidden = _collapsed ? new Set(_collapsed) : null;
+    // use empty Map as fallback to make flow happy
+    const spansMap: Map<string, any> = childrenAreHidden
+      ? new Map(spans.map(s => [s.spanID, s] as [string, any]))
+      : new Map();
+    const boundary = direction < 0 ? -1 : spans.length;
+    let nextSpanIndex: number | undefined;
+    for (let i = fullViewSpanIndex + direction; i !== boundary; i += direction) {
+      const span = spans[i];
+      const { duration: spanDuration, spanID, startTime: spanStartTime } = span;
+      const spanEndTime = spanStartTime + spanDuration;
+      if (checkVisibility && (spanStartTime > endTime || spanEndTime < startTime)) {
+        // span is not visible within the view range
+        continue;
       }
-      if (!_trace) {
-        return;
+      if (findMatches && !findMatches.has(spanID)) {
+        // skip to search matches (when searching)
+        continue;
       }
-      const { duration, spans, startTime: traceStartTime } = _trace;
-      const isUp = direction < 0;
-      let boundaryRow: number;
-      if (startRow != null) {
-        boundaryRow = startRow;
-      } else if (isUp) {
-        boundaryRow = xrs.getTopRowIndexVisible();
-      } else {
-        boundaryRow = xrs.getBottomRowIndexVisible();
-      }
-      const spanIndex = xrs.mapRowIndexToSpanIndex(boundaryRow);
-      if ((spanIndex === 0 && isUp) || (spanIndex === spans.length - 1 && !isUp)) {
-        return;
-      }
-      // fullViewSpanIndex is one row inside the view window unless already at the top or bottom
-      let fullViewSpanIndex = spanIndex;
-      if (spanIndex !== 0 && spanIndex !== spans.length - 1) {
-        fullViewSpanIndex -= direction;
-      }
-      const [viewStart, viewEnd] = xrs.getViewRange();
-      const checkVisibility = viewStart !== 0 || viewEnd !== 1;
-      // use NaN as fallback to make flow happy
-      const startTime = checkVisibility ? traceStartTime + duration * viewStart : NaN;
-      const endTime = checkVisibility ? traceStartTime + duration * viewEnd : NaN;
-      const findMatches = xrs.getSearchedSpanIDs();
-      const _collapsed = xrs.getCollapsedChildren();
-      const childrenAreHidden = _collapsed ? new Set(_collapsed) : null;
-      // use empty Map as fallback to make flow happy
-      const spansMap: Map<string, any> = childrenAreHidden
-        ? new Map(spans.map(s => [s.spanID, s] as [string, any]))
-        : new Map();
-      const boundary = direction < 0 ? -1 : spans.length;
-      let nextSpanIndex: number | undefined;
-      for (let i = fullViewSpanIndex + direction; i !== boundary; i += direction) {
-        const span = spans[i];
-        const { duration: spanDuration, spanID, startTime: spanStartTime } = span;
-        const spanEndTime = spanStartTime + spanDuration;
-        if (checkVisibility && (spanStartTime > endTime || spanEndTime < startTime)) {
-          // span is not visible within the view range
+      if (childrenAreHidden) {
+        // make sure the span is not collapsed
+        const { isHidden, parentIDs } = isSpanHidden(span, childrenAreHidden, spansMap);
+        if (isHidden) {
+          parentIDs.forEach(id => childrenAreHidden.add(id));
           continue;
         }
-        if (findMatches && !findMatches.has(spanID)) {
-          // skip to search matches (when searching)
-          continue;
-        }
-        if (childrenAreHidden) {
-          // make sure the span is not collapsed
-          const { isHidden, parentIDs } = isSpanHidden(span, childrenAreHidden, spansMap);
+      }
+      nextSpanIndex = i;
+      break;
+    }
+    if (!nextSpanIndex || nextSpanIndex === boundary) {
+      // might as well scroll to the top or bottom
+      nextSpanIndex = boundary - direction;
+
+      // If there are hidden children, scroll to the last visible span
+      if (childrenAreHidden) {
+        let isFallbackHidden: boolean;
+        do {
+          const { isHidden, parentIDs } = isSpanHidden(spans[nextSpanIndex], childrenAreHidden, spansMap);
           if (isHidden) {
             parentIDs.forEach(id => childrenAreHidden.add(id));
-            continue;
+            nextSpanIndex--;
           }
-        }
-        nextSpanIndex = i;
-        break;
+          isFallbackHidden = isHidden;
+        } while (isFallbackHidden);
       }
-      if (!nextSpanIndex || nextSpanIndex === boundary) {
-        // might as well scroll to the top or bottom
-        nextSpanIndex = boundary - direction;
-
-        // If there are hidden children, scroll to the last visible span
-        if (childrenAreHidden) {
-          let isFallbackHidden: boolean;
-          do {
-            const { isHidden, parentIDs } = isSpanHidden(spans[nextSpanIndex], childrenAreHidden, spansMap);
-            if (isHidden) {
-              parentIDs.forEach(id => childrenAreHidden.add(id));
-              nextSpanIndex--;
-            }
-            isFallbackHidden = isHidden;
-          } while (isFallbackHidden);
-        }
-      }
-      const nextRow = xrs.mapSpanIndexToRowIndex(nextSpanIndex);
-      _scrollPast(nextRow, direction);
     }
-
-    /**
-     * Sometimes the ScrollManager is created before the trace is loaded. This
-     * setter allows the trace to be set asynchronously.
-     */
-    const setTrace = (trace: any) => {
-      _trace = trace;
-    }
-
-    /**
-     * `setAccessors` is bound in the ctor, so it can be passed as a prop to
-     * children components.
-     */
-    const setAccessors = (accessors: Accessors) => {
-      _accessors = accessors;
-    };
-
-    /**
-     * Scrolls around one page down (0.95x). It is bounds in the ctor, so it can
-     * be used as a keyboard shortcut handler.
-     */
-    const scrollPageDown = () => {
-      if (!_scroller || !_accessors) {
-        return;
-      }
-      _scroller.scrollBy(0.95 * _accessors.getViewHeight(), true);
-    };
-
-    /**
-     * Scrolls around one page up (0.95x). It is bounds in the ctor, so it can
-     * be used as a keyboard shortcut handler.
-     */
-    const scrollPageUp = () => {
-      if (!_scroller || !_accessors) {
-        return;
-      }
-      _scroller.scrollBy(-0.95 * _accessors.getViewHeight(), true);
-    };
-
-    /**
-     * Scrolls to the next visible span, ignoring spans that do not match the
-     * text filter, if there is one. It is bounds in the ctor, so it can
-     * be used as a keyboard shortcut handler.
-     */
-    const scrollToNextVisibleSpan = () => {
-      _scrollToVisibleSpan(1);
-    };
-
-    /**
-     * Scrolls to the previous visible span, ignoring spans that do not match the
-     * text filter, if there is one. It is bounds in the ctor, so it can
-     * be used as a keyboard shortcut handler.
-     */
-    const scrollToPrevVisibleSpan = () => {
-      _scrollToVisibleSpan(-1);
-    };
-
-    const scrollToFirstVisibleSpan = () => {
-      _scrollToVisibleSpan(1, 0);
-    };
-
-    // destroy() {
-    //   _trace = undefined;
-    //   _scroller = undefined;
-    //   _accessors = undefined;
-    // }
-
+    const nextRow = xrs.mapSpanIndexToRowIndex(nextSpanIndex);
+    this._scrollPast(nextRow, direction);
   }
-})
+
+  /**
+   * Sometimes the ScrollManager is created before the trace is loaded. This
+   * setter allows the trace to be set asynchronously.
+   */
+  setTrace(trace: any | TNil) {
+    this._trace = trace;
+  }
+
+  /**
+   * `setAccessors` is bound in the ctor, so it can be passed as a prop to
+   * children components.
+   */
+  setAccessors = (accessors: Accessors) => {
+    this._accessors = accessors;
+  };
+
+  /**
+   * Scrolls around one page down (0.95x). It is bounds in the ctor, so it can
+   * be used as a keyboard shortcut handler.
+   */
+  scrollPageDown = () => {
+    if (!this._scroller || !this._accessors) {
+      return;
+    }
+    this._scroller.scrollBy(0.95 * this._accessors.getViewHeight(), true);
+  };
+
+  /**
+   * Scrolls around one page up (0.95x). It is bounds in the ctor, so it can
+   * be used as a keyboard shortcut handler.
+   */
+  scrollPageUp = () => {
+    if (!this._scroller || !this._accessors) {
+      return;
+    }
+    this._scroller.scrollBy(-0.95 * this._accessors.getViewHeight(), true);
+  };
+
+  /**
+   * Scrolls to the next visible span, ignoring spans that do not match the
+   * text filter, if there is one. It is bounds in the ctor, so it can
+   * be used as a keyboard shortcut handler.
+   */
+  scrollToNextVisibleSpan = () => {
+    this._scrollToVisibleSpan(1);
+  };
+
+  /**
+   * Scrolls to the previous visible span, ignoring spans that do not match the
+   * text filter, if there is one. It is bounds in the ctor, so it can
+   * be used as a keyboard shortcut handler.
+   */
+  scrollToPrevVisibleSpan = () => {
+    this._scrollToVisibleSpan(-1);
+  };
+
+  scrollToFirstVisibleSpan = () => {
+    this._scrollToVisibleSpan(1, 0);
+  };
+
+  destroy() {
+    this._trace = undefined;
+    this._scroller = undefined;
+    this._accessors = undefined;
+  }
+}

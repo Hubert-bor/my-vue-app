@@ -1,3 +1,4 @@
+import getTrackFilter from '../utils/tracking/getTrackFilter';
 
 // export for tests
 export const CATEGORY_FILTER = 'jaeger/ux/trace/filter';
@@ -11,6 +12,8 @@ export const ACTION_PREV = 'previous';
 export const ACTION_RANGE_REFRAME = 'reframe';
 export const ACTION_RANGE_SHIFT = 'shift';
 
+
+export const trackFilter = getTrackFilter(CATEGORY_FILTER);
 
 export function trackFocusMatches() {
 }

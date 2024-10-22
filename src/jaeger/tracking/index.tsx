@@ -1,30 +1,18 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-import { TNil } from '../../types';
-import { IWebAnalyticsFunc } from '../../types/tracking';
-import GA from './ga';
-import NoopWebAnalytics from './noopWebAnalytics';
-import getConfig from '../config/get-config';
-import { getVersionInfo } from '../constants';
-
+type TNil = null | undefined;
 const TrackingImplementation = () => {
-  const config = getConfig();
+  const config = {
+    tracking: {
+      gaID: '',
+    },
+    trackingContext: {
+      appVersion: 'string',
+    },
+  }
   let versionShort;
   let versionLong;
 
-  const versionInfo = getVersionInfo();
+  const versionInfo = '00.0.123456789'
 
   if (versionInfo) {
     try {
@@ -45,15 +33,15 @@ const TrackingImplementation = () => {
     versionLong = 'unknown';
   }
 
-  let webAnalyticsFunc = NoopWebAnalytics;
+  // let webAnalyticsFunc = NoopWebAnalytics;
 
-  if (config.tracking && config.tracking.customWebAnalytics) {
-    webAnalyticsFunc = config.tracking.customWebAnalytics as IWebAnalyticsFunc;
-  } else if (config.tracking && config.tracking.gaID) {
-    webAnalyticsFunc = GA;
-  }
+  // if (config.tracking && config.tracking.customWebAnalytics) {
+  //   webAnalyticsFunc = config.tracking.customWebAnalytics as any;
+  // } else if (config.tracking && config.tracking.gaID) {
+  //   webAnalyticsFunc = "GA";
+  // }
 
-  const webAnalytics = webAnalyticsFunc(config, versionShort, versionLong);
+  // const webAnalytics = webAnalyticsFunc(config, versionShort, versionLong);
   webAnalytics.init();
 
   return webAnalytics;

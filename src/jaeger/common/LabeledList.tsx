@@ -12,16 +12,16 @@ type LabeledListProps = {
 export default function LabeledList(props: LabeledListProps) {
   const { className, dividerClassName, items } = props;
   return (
-    <ul className={`LabeledList ${className || ''}`}>
+    <ul class={`LabeledList ${className || ''}`}>
       {items.map(({ key, label, value }, i) => {
         const divider = i < items.length - 1 && (
-          <li className="LabeledList--item" key={`${key}--divider`}>
-            <Divider className={dividerClassName} type="vertical" />
+          <li class="LabeledList--item" key={`${key}--divider`}>
+            <Divider class={dividerClassName} type="vertical" />
           </li>
         );
         return [
-          <li className="LabeledList--item" key={key}>
-            <span className="LabeledList--label">{label}</span>
+          <li class="LabeledList--item" key={key}>
+            <span class="LabeledList--label">{label}</span>
             <strong>{value}</strong>
           </li>,
           divider,

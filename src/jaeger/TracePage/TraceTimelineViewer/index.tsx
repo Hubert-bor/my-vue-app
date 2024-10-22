@@ -1,4 +1,3 @@
-import { actions } from './duck';
 import TimelineHeaderRow from './TimelineHeaderRow';
 import VirtualizedTraceView from './VirtualizedTraceView';
 import { merge as mergeShortcuts } from '../keyboard-shortcuts';
@@ -38,16 +37,20 @@ const NUM_TICKS = 5;
 
 export default defineComponent({
   name: 'TraceTimelineViewerImpl',
+  components: { TimelineHeaderRow, VirtualizedTraceView },
+  props: {
+    trace: Object,
+    viewRange: Object,
+    registerAccessors: Function,
+    findMatchesIDs: Object,
+    scrollToFirstVisibleSpan: Function,
+    spanNameColumnWidth: { type: Number, default: 0.25 },
+    criticalPath: String,
+    updateNextViewRangeTime: Function,
+    updateViewRangeTime: Object,
+  },
   setup(props: any) {
 
-    onMounted(() => {
-      mergeShortcuts({
-        collapseAll: collapseAll,
-        expandAll: expandAll,
-        collapseOne: collapseOne,
-        expandOne: expandOne,
-      });
-    })
     const collapseAll = () => {
       props.collapseAll(props.trace.spans);
     };
@@ -67,12 +70,20 @@ export default defineComponent({
     const { setSpanNameColumnWidth, updateNextViewRangeTime, updateViewRangeTime, viewRange, ...rest } =
       props;
     const { spanNameColumnWidth, trace } = rest;
+    console.log('%c ~ rest ~ ', 'color:#2ecc71', rest)
 
-
+    onMounted(() => {
+      mergeShortcuts({
+        collapseAll: collapseAll,
+        expandAll: expandAll,
+        collapseOne: collapseOne,
+        expandOne: expandOne,
+      });
+    })
 
     return () => (
       <>
-        <div className="TraceTimelineViewer">
+        <div class="TraceTimelineViewer">
           <TimelineHeaderRow
             duration={trace.duration}
             nameColumnWidth={spanNameColumnWidth}

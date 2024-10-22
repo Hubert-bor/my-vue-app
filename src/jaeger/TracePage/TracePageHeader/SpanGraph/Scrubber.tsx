@@ -9,6 +9,7 @@ type ScrubberProps = {
   onMouseLeave: any
 }
 
+
 export default function Scrubber({
   isDragging,
   onMouseDown,
@@ -17,7 +18,7 @@ export default function Scrubber({
   position,
 }: ScrubberProps) {
   const xPercent = `${position * 100}%`;
-  const className = cx('Scrubber', { isDragging });
+  const className = 'Scrubber'
   return (
     <g className={className}>
       <g
@@ -44,5 +45,5 @@ export default function Scrubber({
       </g>
       <line className="Scrubber--line" y2="100%" x1={xPercent} x2={xPercent} />
     </g>
-  );
+  )
 }

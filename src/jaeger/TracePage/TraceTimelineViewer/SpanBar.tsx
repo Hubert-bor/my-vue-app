@@ -71,7 +71,7 @@ function SpanBar(props: TCommonProps) {
 
   return (
     <div
-      className="SpanBar--wrapper"
+      class="SpanBar--wrapper"
       onClick={onClick}
       onMouseOut={setShortLabel}
       onMouseOver={setLongLabel}
@@ -79,14 +79,14 @@ function SpanBar(props: TCommonProps) {
     >
       <div
         aria-label={label}
-        className="SpanBar--bar"
+        class="SpanBar--bar"
         style={{
           background: color,
           left: toPercent(viewStart),
           width: toPercent(viewEnd - viewStart),
         }}
       >
-        <div className={`SpanBar--label is-${hintSide}`}>{label}</div>
+        <div class={`SpanBar--label is-${hintSide}`}>{label}</div>
       </div>
       <div>
         {Object.keys(logGroups).map(positionKey => (
@@ -106,7 +106,7 @@ function SpanBar(props: TCommonProps) {
           >
             <div
               data-testid="SpanBar--logMarker"
-              className="SpanBar--logMarker"
+              class="SpanBar--logMarker"
               style={{ left: positionKey, zIndex: 3 }}
             />
           </Popover>
@@ -114,7 +114,7 @@ function SpanBar(props: TCommonProps) {
       </div>
       {rpc && (
         <div
-          className="SpanBar--rpc"
+          class="SpanBar--rpc"
           style={{
             background: rpc.color,
             left: toPercent(rpc.viewStart),
@@ -140,7 +140,7 @@ function SpanBar(props: TCommonProps) {
               <div
                 key={key}
                 data-testid="SpanBar--criticalPath"
-                className="SpanBar--criticalPath"
+                class="SpanBar--criticalPath"
                 style={{
                   background: 'black',
                   left: toPercentInDecimal(criticalPathViewStart),

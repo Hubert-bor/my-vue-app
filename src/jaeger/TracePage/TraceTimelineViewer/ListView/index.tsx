@@ -96,6 +96,20 @@ const DEFAULT_INITIAL_DRAW = 300;
 
 export default defineComponent({
   name: 'ListView',
+  props: {
+    dataLength: Number,
+    initialDraw: Number,
+    viewBuffer: Number,
+    viewBufferMin: Number,
+    style: String,
+    itemsWrapperClassName: String,
+    onScroll: Function,
+    getIndexFromKey: Function,
+    itemHeightGetter: Function,
+    getKeyFromIndex: Function,
+    itemRenderer: Function,
+    windowScroller: Boolean,
+  },
   setup(props: any) {
 
     /**
@@ -327,7 +341,7 @@ export default defineComponent({
       for (let i = 0; i < max; i++) {
         const node: HTMLElement = nodes[i] as any;
         // use `.getAttribute(...)` instead of `.dataset` for jest / JSDOM
-        const itemKey = node.getAttribute('data-item-key');
+        const itemKey = node?.getAttribute?.('data-item-key');
         if (!itemKey) {
           // eslint-disable-next-line no-console
           console.warn('itemKey not found');
@@ -364,14 +378,14 @@ export default defineComponent({
      * fallbck to `.props.itemHeightGetter(...)`.
      */
     const _getHeight = (i: number) => {
-      const key = props.getKeyFromIndex(i);
+      const key = props?.getKeyFromIndex?.(i);
       const known = _knownHeights.get(key);
       // known !== known iff known is NaN
       // eslint-disable-next-line no-self-compare
       if (known != null && known === known) {
         return known;
       }
-      return props.itemHeightGetter(i, key);
+      return props?.itemHeightGetter?.(i, key);
     };
 
     const {
@@ -425,6 +439,7 @@ export default defineComponent({
       };
       const itemKey = getKeyFromIndex(i);
       const attrs = { 'data-item-key': itemKey };
+
       items.push(itemRenderer(itemKey, style, i, attrs));
     }
     const wrapperProps: TWrapperProps = {
@@ -440,7 +455,7 @@ export default defineComponent({
       position: 'relative' as const,
       height: _yPositions.getEstimatedHeight(),
     };
-
+    const vnodes = items.filter(item => item)
     return () => (
       <>
         <div {...wrapperProps}>
@@ -452,16 +467,18 @@ export default defineComponent({
                 margin: 0,
                 padding: 0,
               }}
-              className={props.itemsWrapperClassName}
+              class={props.itemsWrapperClassName}
               ref={_initItemHolder}
             >
-              {items}
+              {/* {...vnodes.map((item) => createVNode(item))} */}
+              {vnodes}
             </div>
           </div>
         </div>
       </>
     )
-
   }
 })
 
+
+import { createVNode } from 'vue'

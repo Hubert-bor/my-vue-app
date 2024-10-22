@@ -16,7 +16,7 @@ import _throttle from 'lodash/throttle';
 
 import { trackEvent } from '.';
 
-import { TNil } from '../../types';
+type TNil = null | undefined;
 
 // export for tests
 export const ACTION_FILTER_SET = 'set';

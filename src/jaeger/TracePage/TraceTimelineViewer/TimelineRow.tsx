@@ -15,11 +15,13 @@ interface ITimelineRowCellProps {
 
 export default function TimelineRow(props: TTimelineRowProps) {
   const { children, className = '', ...rest } = props;
-  return (
-    <div className={`flex-row ${className}`} {...rest}>
-      {children}
-    </div>
-  );
+  return () => (
+    <>
+      <div class={`flex-row ${className}`} {...rest}>
+        {children}
+      </div>
+    </>
+  )
 }
 
 TimelineRow.defaultProps = {
